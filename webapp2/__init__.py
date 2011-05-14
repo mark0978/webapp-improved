@@ -143,27 +143,8 @@ class RequestHandler(object):
         self.request = request
         self.response = response
         self.app = request.app
-        self.dispatch()
-
-    def initialize(self, request, response):
-        """Initializes this request handler with the given WSGI application,
-        Request and Response.
-
-        .. warning::
-           This is deprecated. It is here for compatibility with webapp only.
-           Use __init__() instead.
-
-        :param request:
-            A :class:`Request` instance.
-        :param response:
-            A :class:`Response` instance.
-        """
-        from warnings import warn
-        warn(DeprecationWarning('RequestHandler.initialize() is deprecated. '
-            'Use __init__() instead.'))
-        self.request = request
-        self.response = response
-        self.app = WSGIApplication.active_instance
+        if hasattr(self, 'initialize') and callable(self.initialize):
+            self.initialize(request, response)
 
     def dispatch(self):
         """Dispatches the request.
@@ -770,8 +751,14 @@ class Router(object):
             except Exception, e:
                 handler.handle_exception(e, request.app.debug)
         else:
-            # A function or webapp2.RequestHandler: just call it.
-            handler_spec(request, response)
+            if isinstance(handler_spec, RequestHandler):
+                # Initialize the Handler object (so that derived Handler classes work properly)
+                handler_spec(request, response)
+                # then call it
+                handler_spec.dispatch()
+            else:
+                # A function just call it.
+                handler_spec(request, response)
 
     def set_builder(self, func):
         """Sets a the function called for building URLs.

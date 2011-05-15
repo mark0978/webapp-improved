@@ -751,11 +751,11 @@ class Router(object):
             except Exception, e:
                 handler.handle_exception(e, request.app.debug)
         else:
-            if isinstance(handler_spec, RequestHandler):
+            if issubclass(handler_spec, RequestHandler):
                 # Initialize the Handler object (so that derived Handler classes work properly)
-                handler_spec(request, response)
+                handler = handler_spec(request, response)
                 # then call it
-                handler_spec.dispatch()
+                handler.dispatch()
             else:
                 # A function just call it.
                 handler_spec(request, response)
